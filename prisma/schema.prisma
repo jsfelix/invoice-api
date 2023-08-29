@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Provider {
+  id           String    @id @db.VarChar(50)
+  name         String    @db.VarChar(200)
+  document     String?   @db.VarChar(50)
+  address      String?
+  email        String    @unique @db.VarChar(150)
+  passwordHash String    @map("password_hash")
+  phone        String?   @db.VarChar(30)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime? @map("updated_at") @db.Timestamptz()
+  invoices     Invoice[]
+
+  @@map("providers")
+}
+
+model Client {
+  id        String    @id @db.VarChar(50)
+  name      String    @db.VarChar(200)
+  document  String?   @db.VarChar(50)
+  address   String?
+  email     String?   @db.VarChar(150)
+  phone     String?   @db.VarChar(30)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz()
+  invoices  Invoice[]
+
+  @@map("clients")
+}
+
+model InvoiceItem {
+  id          String  @id @db.VarChar(50)
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  invoiceId   String  @db.VarChar(50)
+  description String
+  quantity    Int
+  unitPrice   Int     @map("unit_price")
+  date        String  @db.VarChar(10)
+
+  @@map("invoice_items")
+}
+
+model Invoice {
+  id         String        @id @db.VarChar(50)
+  seq        Int
+  provider   Provider      @relation(fields: [providerId], references: [id])
+  providerId String        @map("provider_id") @db.VarChar(50)
+  client     Client        @relation(fields: [clientId], references: [id])
+  clientId   String        @map("client_id") @db.VarChar(50)
+  items      InvoiceItem[]
+  discount   Int
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@unique([seq, providerId])
+  @@map("invoices")
+}
